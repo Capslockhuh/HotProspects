@@ -40,6 +40,24 @@ struct ProspectsView: View {
             return prospects.people.filter { !$0.isContacted }
         }
     }
+    
+    enum SortType {
+        case recent, name
+    }
+    
+    @State private var sort: SortType = .recent
+    
+    var fileteredAndSortedProspects: [Prospect] {
+        switch sort {
+        case .recent:
+            return prospects.people
+        case .name:
+            let preSortedProspects = prospects.people.sorted { $0.name > $1.name }
+            return preSortedProspects
+        }
+    }
+    
+    @State private var showingConfirmationDialog = false
     var body: some View {
         NavigationView {
             List {
@@ -82,14 +100,31 @@ struct ProspectsView: View {
             }
                 .navigationTitle(title)
                 .toolbar {
-                    Button {
-                        isShowingScanner = true
-                    } label: {
-                        Label("Scam", systemImage: "qrcode.viewfinder")
+                    ToolbarItemGroup(placement: .navigationBarTrailing) {
+                        Button {
+                            isShowingScanner = true
+                        } label: {
+                            Label("Scam", systemImage: "qrcode.viewfinder")
+                        }
+                        Button {
+                            showingConfirmationDialog = true
+                        } label: {
+                            Label("Change sorting", systemImage: "arrow.up.arrow.down")
+                        }
+
                     }
+
                 }
-                .sheet(isPresented: $isShowingScanner) {
+                    .sheet(isPresented: $isShowingScanner) {
                     CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson\npaul@hackingwithswift.com", completion: handleScan)
+                }
+                .confirmationDialog("Sort prospects by", isPresented: $showingConfirmationDialog) {
+                    Button("Most Recent") {
+                        sort = SortType.recent
+                    }
+                    Button("Name") {
+                        sort = SortType.name
+                    }
                 }
         }
     }
